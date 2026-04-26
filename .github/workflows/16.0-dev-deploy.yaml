@@ -1,7 +1,7 @@
 name: DEV_16_DEPLOY
 
 on:
-  push:
+  push: 
     branches:
       - 16.0-development
 
