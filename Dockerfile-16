@@ -159,6 +159,7 @@ RUN pip3 install -U -r /mnt/requirements.txt
 # Set the default config file
 ENV ODOO_RC=/etc/odoo/odoo.conf
 COPY ./wait-for-psql.py /usr/local/bin/wait-for-psql.py
+COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /var/lib/odoo && \
@@ -221,3 +222,4 @@ RUN if [ -n "$AUTH_USERNAME" ] && [ -n "$AUTH_PASSWORD" ]; then \
 EXPOSE 8080 8069 8072
 
 USER odoo
+ENTRYPOINT ["/bin/bash", "-c", "supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
