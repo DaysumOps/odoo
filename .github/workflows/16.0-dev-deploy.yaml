@@ -1,0 +1,57 @@
+name: DEV_16_DEPLOY
+
+on:
+  push:
+    branches:
+      - 16.0-development
+
+env:
+  odoo_version: "16.0"
+  image_name: ghcr.io/${{ github.repository_owner }}/16.0-development
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      actions: write
+      contents: read
+      deployments: write
+      id-token: write
+      packages: write
+
+    steps:
+      - name: free disk space
+        run: |
+          df -h
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          df -h
+
+      - name: checkout content
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: benjlevesque/short-sha@v2.2
+        id: short-sha
+        with:
+          length: 6
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          platforms: linux/amd64
+          file: ./Dockerfile-16
+          push: true
+          tags: |
+            ${{ env.image_name }}:${{ steps.short-sha.outputs.sha }}
+            ${{ env.image_name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
