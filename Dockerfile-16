@@ -221,5 +221,3 @@ RUN if [ -n "$AUTH_USERNAME" ] && [ -n "$AUTH_PASSWORD" ]; then \
 EXPOSE 8080 8069 8072
 
 USER odoo
-
-ENTRYPOINT ["/bin/bash", "-c", "supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
