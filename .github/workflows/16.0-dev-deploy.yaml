@@ -52,5 +52,3 @@ jobs:
           tags: |
             ${{ env.image_name }}:${{ steps.short-sha.outputs.sha }}
             ${{ env.image_name }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
