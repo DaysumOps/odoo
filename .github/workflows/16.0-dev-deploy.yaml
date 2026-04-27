@@ -7,7 +7,7 @@ on:
 
 env:
   odoo_version: "16.0"
-  image_name: ghcr.io/${{ github.repository_owner }}/16.0-development
+  image_name: ghcr.io/${{ github.repository_owner }}/odoo-16.0-development
 
 jobs:
   build:
