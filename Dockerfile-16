@@ -129,9 +129,9 @@ RUN useradd -r -s /bin/bash -U -d /opt/odoo odoo && \
     chown odoo:odoo /opt/odoo
 
 # Clone Odoo repository with proper cleanup
-RUN rm -rf /opt/odoo 
-RUN mkdir -p /opt/odoo
-COPY . /opt/odoo &&  chown -R odoo:odoo /opt/odoo 
+RUN rm -rf /opt/odoo && mkdir -p /opt/odoo
+COPY . /opt/odoo
+RUN chown -R odoo:odoo /opt/odoo
  
 
 # Install Python deps: gevent==21.8.0 from Odoo requirements does not build on Py3.10 with current Cython;
