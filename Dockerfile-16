@@ -130,6 +130,7 @@ RUN useradd -r -s /bin/bash -U -d /opt/odoo odoo && \
 
 # Clone Odoo repository with proper cleanup
 RUN rm -rf /opt/odoo 
+RUN mkdir -p /opt/odoo
 COPY . /opt/odoo &&  chown -R odoo:odoo /opt/odoo 
  
 
