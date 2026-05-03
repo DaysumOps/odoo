@@ -25,13 +25,14 @@
 # Gordana Bilas, 2024
 # Bole <bole@dajmi5.com>, 2025
 # Zvonimir Galic, 2025
+# Ivica Dimjašević, 2025
 # Luka Carević <luka@uvid.hr>, 2025
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-06 13:32+0000\n"
+"POT-Creation-Date: 2025-05-06 20:36+0000\n"
 "PO-Revision-Date: 2022-09-22 05:54+0000\n"
 "Last-Translator: Luka Carević <luka@uvid.hr>, 2025\n"
 "Language-Team: Croatian (https://app.transifex.com/odoo/teams/41243/hr/)\n"
@@ -549,7 +550,7 @@ msgstr "Ormarić sa vratima"
 #: model:ir.model.fields,field_description:product.field_product_product__can_image_1024_be_zoomed
 #: model:ir.model.fields,field_description:product.field_product_template__can_image_1024_be_zoomed
 msgid "Can Image 1024 be zoomed"
-msgstr ""
+msgstr "Može li se slika 1024 povećati"
 
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__can_image_variant_1024_be_zoomed
@@ -910,7 +911,7 @@ msgstr "Definiraj jedinicu mjere težine"
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_supplierinfo__delay
 msgid "Delivery Lead Time"
-msgstr "Glavno vrijeme dostave"
+msgstr "Rok dostave"
 
 #. module: product
 #: model:ir.model.fields,field_description:product.field_product_product__description
@@ -1515,6 +1516,8 @@ msgid ""
 "receipt of the products in your warehouse. Used by the scheduler for "
 "automatic computation of the purchase order planning."
 msgstr ""
+"Vrijeme isporuke u danima između potvrde naloga u nabavi i primke proizvoda "
+"u vaše skladište. Koristi ga planer za automatski izračun planiranja nabave."
 
 #. module: product
 #: model:product.attribute,name:product.product_attribute_1
@@ -2566,7 +2569,7 @@ msgstr ""
 #: code:addons/product/models/product_template.py:0
 #, python-format
 msgid "The Internal Reference '%s' already exists."
-msgstr ""
+msgstr "Interna oznaka '%s' već postoji."
 
 #. module: product
 #. odoo-python
@@ -2668,6 +2671,9 @@ msgid ""
 "expressed in the vendor Product Unit of Measure if not any, in the default "
 "unit of measure of the product otherwise."
 msgstr ""
+"Količina za nabavu od ovog dobavljača kako bi se ostvarila povoljna cijena, "
+"izražena u dobavljačevoj jedinici mjere proizvoda, a ako takva ne postoji, u"
+" zadanoj jedinici mjere proizvoda."
 
 #. module: product
 #. odoo-python
@@ -3164,6 +3170,7 @@ msgstr ""
 
 #. module: product
 #. odoo-python
+#: code:addons/product/models/product_category.py:0
 #: code:addons/product/models/product_category.py:0
 #, python-format
 msgid "You cannot delete the %s product category."
