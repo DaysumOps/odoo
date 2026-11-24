@@ -107,11 +107,17 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          SHA_SHORT=${GITHUB_SHA::6}
+          set -euo pipefail
+          sha_short="${GITHUB_SHA:0:6}"
+          refs=()
+          for digest in *; do
+            refs+=("${IMAGE_NAME}@sha256:${digest}")
+          done
+          echo "merging: ${refs[*]}"
           docker buildx imagetools create \
-            --tag "${IMAGE_NAME}:${SHA_SHORT}" \
+            --tag "${IMAGE_NAME}:${sha_short}" \
             --tag "${IMAGE_NAME}:latest" \
-            $(printf '%s\n' * | sed 's|^|${IMAGE_NAME}@sha256:|' | tr '\n' ' ')
+            "${refs[@]}"
         env:
           IMAGE_NAME: ${{ env.image_name }}
 
