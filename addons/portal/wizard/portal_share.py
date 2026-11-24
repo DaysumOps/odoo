@@ -75,7 +75,6 @@ class PortalShare(models.TransientModel):
                 values={'partner': partner, 'note': self.note, 'record': self.resource_ref,
                         'share_link': share_link},
                 subject=_("You are invited to access %s", self.resource_ref.display_name),
-                message_type='comment',
                 subtype_id=note.id,
                 email_layout_xmlid='mail.mail_notification_light',
                 partner_ids=[(6, 0, partner.ids)])
@@ -95,7 +94,6 @@ class PortalShare(models.TransientModel):
                 values={'partner': partner, 'note': self.note, 'record': self.resource_ref,
                         'share_link': share_link},
                 subject=_("You are invited to access %s", self.resource_ref.display_name),
-                message_type='comment',
                 subtype_id=note.id,
                 email_layout_xmlid='mail.mail_notification_light',
                 partner_ids=[(6, 0, partner.ids)])

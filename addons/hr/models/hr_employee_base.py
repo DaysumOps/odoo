@@ -194,10 +194,7 @@ class HrEmployeeBase(models.AbstractModel):
                     'company_id': employee.company_id.id
                 })
             else:
-                partner = employee.work_contact_id
-                if not employee.user_id and not partner.user_ids:
-                    partner = partner.sudo()
-                partner.write({
+                employee.work_contact_id.sudo().write({
                     'email': employee.work_email,
                     'mobile': employee.mobile_phone,
                 })

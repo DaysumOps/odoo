@@ -3,7 +3,6 @@
 
 from odoo import Command
 from odoo import models, _
-from odoo.exceptions import UserError
 
 
 class SaleOrder(models.Model):
@@ -43,14 +42,11 @@ class SaleOrder(models.Model):
 
         booths = self.env['event.booth'].browse(event_booth_pending_ids)
 
-        if any(booth.product_id.id != product_id for booth in booths):
-            raise UserError(_("The booth doesn't match with this product."))
-
         values['event_id'] = booths.event_id.id
         values['event_booth_registration_ids'] = [
             Command.create({
-                **registration_values,
                 'event_booth_id': booth.id,
+                **registration_values,
             }) for booth in booths
         ]
 
@@ -69,16 +65,12 @@ class SaleOrder(models.Model):
             return values
 
         booths = self.env['event.booth'].browse(event_booth_pending_ids)
-
-        if any(booth.product_id.id != order_line.product_id.id for booth in booths):
-            raise UserError(_("The booth doesn't match with this product."))
-
         values['event_booth_registration_ids'] = [
             Command.delete(registration.id)
             for registration in order_line.event_booth_registration_ids
         ] + [
             Command.create({
-                **registration_values,
                 'event_booth_id': booth.id,
+                **registration_values,
             }) for booth in booths
         ]

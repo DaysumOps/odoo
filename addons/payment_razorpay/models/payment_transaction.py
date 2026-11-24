@@ -3,7 +3,6 @@
 import logging
 import pprint
 
-from werkzeug.exceptions import Forbidden
 from werkzeug.urls import url_encode, url_join
 
 from odoo import _, models
@@ -91,7 +90,6 @@ class PaymentTransaction(models.Model):
         payload = {
             'amount': converted_amount,
             'currency': self.currency_id.name,
-            'notes': {'reference': self.reference},
         }
         if self.provider_id.capture_manually:  # The related payment must be only authorized.
             payload.update({
@@ -274,13 +272,6 @@ class PaymentTransaction(models.Model):
                 "Response of '/payments' request for transaction with reference %s:\n%s",
                 self.reference, pprint.pformat(entity_data)
             )
-        notes = entity_data.get('notes')
-        reference = isinstance(notes, dict) and notes.get('reference')
-        # Skip refunds: only received from the API or the signed webhook
-        if entity_data.get('entity_type') != 'refund' and reference != self.reference:
-            _logger.warning("Received payment data with incorrect reference")
-            raise Forbidden()
-
         entity_id = entity_data.get('id')
         if not entity_id:
             raise ValidationError("Razorpay: " + _("Received data with missing entity id."))

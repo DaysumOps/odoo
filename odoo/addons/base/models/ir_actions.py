@@ -547,9 +547,8 @@ class IrActionsServer(models.Model):
 
     def _run_action_multi(self, eval_context=None):
         res = False
-        env = eval_context['env'] if eval_context else self.env
         for act in self.child_ids.sorted():
-            res = act.with_env(env).run() or res
+            res = act.run() or res
         return res
 
     def _run_action_object_write(self, eval_context=None):
@@ -635,8 +634,7 @@ class IrActionsServer(models.Model):
         active_id
             id of the current object (single mode)
         active_model
-            model of the records in the calling context; when it differs from
-            the action's model, only Python and multi actions run
+            current model that should equal the action's model
         active_ids (optional)
            ids of the current records (mass mode). If ``active_ids`` and
            ``active_id`` are present, ``active_ids`` is given precedence.
@@ -657,16 +655,6 @@ class IrActionsServer(models.Model):
                         action.name, self.env.user.login, action.model_name,
                     )
                     raise
-
-            other_model_ids = self._context.get('active_model') != action.model_name and (
-                self._context.get('active_id') or self._context.get('active_ids'))
-            if other_model_ids and action.state not in ('code', 'multi'):
-                # Python and multi actions do not use the context records directly
-                _logger.warning(
-                    "Server action %r ignored: the active records are not %s records; got %s.",
-                    action.name, action.model_name, self._context.get('active_model'),
-                )
-                continue
 
             eval_context = self._get_eval_context(action)
             records = eval_context.get('record') or eval_context['model']
