@@ -9,7 +9,17 @@ USER root
 
 # Retrieve the target architecture
 ARG TARGETARCH
-RUN echo "deb http://ftp.us.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list
+# Debian bullseye is EOL: bullseye (and bullseye-security) moved to archive.debian.org,
+# so the live pools return 404 and the build died at "apt-get upgrade".
+RUN sed -i \
+        -e 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|g' \
+        -e 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' \
+        -e 's|http://security.debian.org|http://archive.debian.org|g' \
+        /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive && \
+    echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99archive
+
 RUN apt-get update && \
     apt-get upgrade -y
  
