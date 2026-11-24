@@ -9,7 +9,17 @@ USER root
 
 # Retrieve the target architecture
 ARG TARGETARCH
-RUN echo "deb http://ftp.us.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list
+# Debian bullseye is EOL: bullseye (and bullseye-security) moved to archive.debian.org,
+# so the live pools return 404 and the build died at "apt-get upgrade".
+RUN sed -i \
+        -e 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|g' \
+        -e 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' \
+        -e 's|http://security.debian.org|http://archive.debian.org|g' \
+        /etc/apt/sources.list && \
+    echo "deb http://archive.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive && \
+    echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99archive
+
 RUN apt-get update && \
     apt-get upgrade -y
  
@@ -100,7 +110,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Build and replace kwkhtmltopdf client
  
 # Install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+RUN echo 'deb http://apt-archive.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
     && export GNUPGHOME \
     && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
@@ -129,8 +139,9 @@ RUN useradd -r -s /bin/bash -U -d /opt/odoo odoo && \
     chown odoo:odoo /opt/odoo
 
 # Clone Odoo repository with proper cleanup
-RUN rm -rf /opt/odoo 
-COPY . /opt/odoo &&  chown -R odoo:odoo /opt/odoo 
+RUN rm -rf /opt/odoo && mkdir -p /opt/odoo
+COPY . /opt/odoo
+RUN chown -R odoo:odoo /opt/odoo
  
 
 # Install Python deps: gevent==21.8.0 from Odoo requirements does not build on Py3.10 with current Cython;
