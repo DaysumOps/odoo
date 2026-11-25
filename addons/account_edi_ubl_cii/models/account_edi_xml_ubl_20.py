@@ -197,7 +197,24 @@ class AccountEdiXmlUBL20(models.AbstractModel):
             'tax_amount': taxes_vals['tax_amount_currency'],
             'tax_subtotal_vals': [],
         }
-        epd_tax_to_discount = self._get_early_payment_discount_grouped_by_tax_rate(invoice)
+
+        # If it's not on the whole invoice, don't manage the EPD.
+        epd_tax_to_discount = {}
+        if not taxes_vals.get('invoice_line'):
+            epd_tax_to_discount = self._get_early_payment_discount_grouped_by_tax_rate(invoice)
+            epd_base_tax_amounts = defaultdict(lambda: {
+                'base_amount_currency': 0.0,
+                'tax_amount_currency': 0.0,
+            })
+            if epd_tax_to_discount:
+                for percentage, base_amount_currency in epd_tax_to_discount.items():
+                    epd_base_tax_amounts[percentage]['base_amount_currency'] += base_amount_currency
+                epd_accounted_tax_amount = 0.0
+                for percentage, amounts in epd_base_tax_amounts.items():
+                    amounts['tax_amount_currency'] = invoice.currency_id.round(
+                        amounts['base_amount_currency'] * percentage / 100.0)
+                    epd_accounted_tax_amount += amounts['tax_amount_currency']
+
         for grouping_key, vals in taxes_vals['tax_details'].items():
             if grouping_key['tax_amount_type'] != 'fixed':
                 subtotal = {
@@ -210,18 +227,15 @@ class AccountEdiXmlUBL20(models.AbstractModel):
                 }
                 if epd_tax_to_discount:
                     # early payment discounts: need to recompute the tax/taxable amounts
-                    taxable_amount_after_epd = subtotal['taxable_amount'] - epd_tax_to_discount.get(subtotal['percent'], 0)
-                    tax_amount_after_epd = taxable_amount_after_epd * subtotal['tax_category_vals']['percent'] / 100
+                    epd_base_amount = epd_base_tax_amounts.get(subtotal['percent'], {}).get('base_amount_currency', 0.0)
+                    taxable_amount_after_epd = subtotal['taxable_amount'] - epd_base_amount
                     subtotal.update({
                         'taxable_amount': taxable_amount_after_epd,
-                        'tax_amount': tax_amount_after_epd,
                     })
                 tax_totals_vals['tax_subtotal_vals'].append(subtotal)
 
         if epd_tax_to_discount:
-            # early payment discounts: hence, need to recompute the total tax amount...
-            tax_totals_vals['tax_amount'] = sum([subtot['tax_amount'] for subtot in tax_totals_vals['tax_subtotal_vals']])
-            # ... and add a subtotal section
+            # early payment discounts: hence, need to add a subtotal section
             tax_totals_vals['tax_subtotal_vals'].append({
                 'currency': invoice.currency_id,
                 'currency_dp': invoice.currency_id.decimal_places,
@@ -433,6 +447,7 @@ class AccountEdiXmlUBL20(models.AbstractModel):
             return {}
         tax_to_discount = defaultdict(lambda: 0)
         currency = invoice.currency_id
+        sign = -1 if invoice.move_type == 'out_refund' else 1
         # There can be 'epd' lines with a zero amount. We ignore those lines since we do not output
         # the AllowanceTotalAmount / ChargeTotalAmount in the LegalMonetaryTotal node
         # if the total allowance / charge amount are 0 respectively.
@@ -442,7 +457,7 @@ class AccountEdiXmlUBL20(models.AbstractModel):
         # - https://docs.peppol.eu/poacc/billing/3.0/2024-Q2/rules/ubl-tc434/BR-CO-12/
         for line in invoice.line_ids.filtered(lambda l: l.display_type == 'epd' and not currency.is_zero(l.amount_currency)):
             for tax in line.tax_ids:
-                tax_to_discount[tax.amount] += line.amount_currency
+                tax_to_discount[tax.amount] += sign * line.amount_currency
         return tax_to_discount
 
     def _export_invoice_vals(self, invoice):
@@ -482,19 +497,36 @@ class AccountEdiXmlUBL20(models.AbstractModel):
             taxes_vals['base_amount'] += fixed_tax_details['tax_amount']
 
         # Compute values for invoice lines.
-        line_extension_amount = 0.0
+        expected_line_extension_amount = line_extension_amount = 0.0
 
         invoice_lines = invoice.invoice_line_ids.filtered(lambda line: line.display_type not in ('line_note', 'line_section'))
         document_allowance_charge_vals_list = self._get_document_allowance_charge_vals_list(invoice)
         invoice_line_vals_list = []
         for line_id, line in enumerate(invoice_lines):
             line_taxes_vals = taxes_vals['tax_details_per_record'][line]
-            line_vals = self._get_invoice_line_vals(line, line_taxes_vals)
+            line_vals = self._get_invoice_line_vals(line, {**line_taxes_vals, 'invoice_line': line})
             if not line_vals.get('id'):
                 line_vals['id'] = line_id + 1
             invoice_line_vals_list.append(line_vals)
 
             line_extension_amount += line_vals['line_extension_amount']
+            expected_line_extension_amount += invoice.currency_id.round(line_vals['line_extension_amount'])
+
+        delta_amount = line_extension_amount - expected_line_extension_amount
+        if not invoice.currency_id.is_zero(delta_amount):
+            # distribute rounding error on lines
+            delta_sign = 1 if delta_amount > 0 else -1
+            lines_len = len(invoice_line_vals_list)
+            remaining = delta_amount
+            for line in invoice_line_vals_list:
+                if invoice.currency_id.compare_amounts(remaining, 0) != delta_sign:
+                    break
+                amt = delta_sign * max(
+                    invoice.currency_id.rounding,
+                    abs(invoice.currency_id.round(remaining / lines_len)),
+                )
+                remaining -= amt
+                line['line_extension_amount'] += amt
 
         # Compute the total allowance/charge amounts.
         allowance_total_amount = 0.0
